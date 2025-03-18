@@ -6,7 +6,7 @@ on:
       - main
   push:
     branches:
-      - '**'
+      - main
   schedule:
     - cron: '31 7 * * 3'
 
@@ -31,8 +31,6 @@ jobs:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
 
       - name: Initialize CodeQL
         id: initialize
