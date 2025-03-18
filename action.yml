@@ -1,23 +1,33 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: GitOps Push
+description: A GitHub action that pushes updated Helm charts and an (ArgoCD) manifest to a GitOps repository
+author: Alistair Israel
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: arrow-up
+  color: purple
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  service: 
+    description: The name of the service to push
     required: true
-    default: '1000'
+  version:
+    description: The version or tag of the service to push
+    required: true
+  path-to-chart:
+    description: Path to the folder containing the Helm charts
+    default: "helm/charts"
+  path-to-env-vars:
+    description: Path to the environment variables folder, relative to the chart
+    default: "vars"
 
 # Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
+  commit-sha:
+    description: The SHA of the commit that was pushed
+  commit-message:
+    description: The message of the commit that was pushed
 
 runs:
   using: node20
