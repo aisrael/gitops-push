@@ -15,8 +15,7 @@ on:
       - main
   push:
     branches:
-      - main
-      - feat/*
+      - '**'
 
 permissions:
   contents: read
