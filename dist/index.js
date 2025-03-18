@@ -27267,7 +27267,11 @@ async function run() {
         coreExports.debug(`Full path to chart: ${fullPathToChart}`);
         coreExports.debug(`Full path to env vars: ${fullPathToEnvVars}`);
         // TODO: Implement the actual logic for pushing the chart
-        // 1. checkout
+        // 1. checkout the source repo
+        // 2. update the chart appVersion
+        // 3. generate the ArgoCD Application YAML
+        // 4. checkout the gitops-repo
+        // 5. update the ArgoCD Application YAML
         // Set outputs for other workflow steps to use
         coreExports.setOutput('commit-sha', '40365df9d45b56c6a73bd3dfdd442a6420ad4fba'); // use a random string for now
         coreExports.setOutput('commit-message', 'TODO');
