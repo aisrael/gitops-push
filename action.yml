@@ -9,11 +9,14 @@ branding:
 
 # Define your inputs here.
 inputs:
-  service: 
+  service:
     description: The name of the service to push
     required: true
   version:
     description: The version or tag of the service to push
+    required: true
+  gitops-repo:
+    description: The GitOps repository to push to
     required: true
   path-to-chart:
     description: Path to the folder containing the Helm charts

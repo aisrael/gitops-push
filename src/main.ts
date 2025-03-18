@@ -8,18 +8,20 @@ import { wait } from './wait.js'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const service: string = core.getInput('service')
+    const version: string = core.getInput('version')
+    const pathToChart: string = core.getInput('path-to-chart')
+    const pathToEnvVars: string = core.getInput('path-to-env-vars')
+    const gitopsRepo: string = core.getInput('gitops-repo')
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    core.debug(`Pushing ${service} version ${version} to ${gitopsRepo}`)
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    // TODO: Implement the actual logic for pushing the chart
 
     // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    core.setOutput('commit-sha', 'TODO')
+    core.setOutput('commit-message', 'TODO')
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
