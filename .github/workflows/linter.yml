@@ -19,12 +19,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        id: checkout
+      - name: Checkout branch
+        if: ${{ github.ref_type == 'branch' || github.ref_type == 'tag' }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
+
+      - name: Checkout default
+        if: ${{ ! (github.ref_type == 'branch' || github.ref_type == 'tag') }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         id: setup-node
