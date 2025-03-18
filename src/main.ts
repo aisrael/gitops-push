@@ -16,7 +16,9 @@ export async function run(): Promise<void> {
     const gitopsRepo: string = core.getInput('gitops-repo')
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Pushing ${service} version ${version} to ${environment} in ${gitopsRepo}`)
+    core.debug(
+      `Pushing ${service} version ${version} to ${environment} in ${gitopsRepo}`
+    )
 
     const fullPathToChart: string = path.join(pathToChart, service)
     const fullPathToEnvVars: string = path.join(fullPathToChart, pathToEnvVars)
