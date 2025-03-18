@@ -1,5 +1,7 @@
 name: GitOps Push
-description: A GitHub action that pushes updated Helm charts and an (ArgoCD) manifest to a GitOps repository
+description:
+  A GitHub action that pushes updated Helm charts and an (ArgoCD) manifest to a
+  GitOps repository
 author: Alistair Israel
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
@@ -20,10 +22,10 @@ inputs:
     required: true
   path-to-chart:
     description: Path to the folder containing the Helm charts
-    default: "helm/charts"
+    default: 'helm/charts'
   path-to-env-vars:
     description: Path to the environment variables folder, relative to the chart
-    default: "vars"
+    default: 'vars'
 
 # Define your outputs here.
 outputs:
