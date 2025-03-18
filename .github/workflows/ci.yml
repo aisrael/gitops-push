@@ -18,7 +18,6 @@ jobs:
 
     steps:
       - name: Checkout
-        id: checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -50,15 +49,19 @@ jobs:
 
     steps:
       - name: Checkout
-        id: checkout
         uses: actions/checkout@v4
 
       - name: Test Local Action
         id: test-action
         uses: ./
         with:
-          milliseconds: 2000
+          service: sandbox
+          version: 6a42253902fc95dd8a63a69185ffbc5a0c8a0635 # random sha
+          environment: development
+          gitops-repo: aisrael/gitops
 
       - name: Print Output
         id: output
-        run: echo "${{ steps.test-action.outputs.time }}"
+        run: |
+          echo "${{ steps.test-action.outputs.commit-message }}"
+          echo "${{ steps.test-action.outputs.commit-sha }}"
