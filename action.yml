@@ -17,6 +17,10 @@ inputs:
   version:
     description: The version or tag of the service to push
     required: true
+  environment:
+    description: The environment to push to
+    type: environment
+    required: true
   gitops-repo:
     description: The GitOps repository to push to
     required: true

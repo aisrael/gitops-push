@@ -59,6 +59,7 @@ jobs:
         with:
           service: sandbox
           version: 6a42253902fc95dd8a63a69185ffbc5a0c8a0635 # random sha
+          environment: development
           gitops-repo: aisrael/gitops
 
       - name: Print Output
