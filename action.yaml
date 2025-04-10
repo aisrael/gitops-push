@@ -106,6 +106,7 @@ runs:
           echo "Old chart found at ${TARGET_PATH}"
         else
           echo "::warning::No chart found at ${TARGET_PATH}!"
+          (set -x; mkdir -p "${TARGET_PATH}")
         fi
 
         echo "::group::${HELM_CHARTS}/${DEPLOYMENT}/values/"
