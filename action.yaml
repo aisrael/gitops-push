@@ -135,6 +135,13 @@ runs:
         echo "::endgroup::"
 
         # generate ArgoCD Application
+        if [ -d "${CLUSTER_ENV_PATH}" ]; then
+          echo "::group::${CLUSTER_ENV_PATH}"
+          ls -la "${CLUSTER_ENV_PATH}"
+          echo "::endgroup::"
+        else
+          (set -x; mkdir -p "${CLUSTER_ENV_PATH}")
+        fi
         export ARGOCD_APP_PATH="${CLUSTER_ENV_PATH}/${DEPLOYMENT}.yaml"
         export TEMPLATE_PATH="${{ github.action_path }}/app.yaml.gomplate"
         echo "TEMPLATE_PATH: ${TEMPLATE_PATH}"
