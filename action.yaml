@@ -72,8 +72,7 @@ runs:
         ENVIRONMENT: ${{ inputs.environment }}
         DEPLOYMENT: ${{ inputs.deployment }}
         GITHUB_EVENT_NAME: ${{ github.event_name }}
-        EVENT_ORGANIZATION: ${{ github.event.organization }}
-        EVENT_REPOSITORY: ${{ github.event.repository }}
+        EVENT_REPOSITORY_HTML_URL: ${{ github.event.repository.html_url }}
       run: |
         echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
         echo "REF: ${REF}"
@@ -160,9 +159,9 @@ runs:
         if [ -n "${REF}" ]; then
           # We just fabricate the commit url
           if [[ "${REF}" == v* ]]; then
-            export COMMIT_URL="https://github.com/${EVENT_ORGANIZATION}/${EVENT_REPOSITORY}/releases/tag/${REF}"
+            export COMMIT_URL="${EVENT_REPOSITORY_HTML_URL}/releases/tag/${REF}"
           else
-            export COMMIT_URL="https://github.com/${EVENT_ORGANIZATION}/${EVENT_REPOSITORY}/tree/${REF}"
+            export COMMIT_URL="${EVENT_REPOSITORY_HTML_URL}/tree/${REF}"
           fi
           export LINK="${REF} (${COMMIT_URL})"
         else
