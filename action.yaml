@@ -108,24 +108,24 @@ runs:
           echo "::warning::No chart found at ${TARGET_PATH}!"
         fi
 
-        echo "::group::${HELM_CHARTS}/${DEPLOYMENT}/vars/"
-        ls -la "${HELM_CHARTS}/${DEPLOYMENT}/vars/"
+        echo "::group::${HELM_CHARTS}/${DEPLOYMENT}/values/"
+        ls -la "${HELM_CHARTS}/${DEPLOYMENT}/values/"
         echo "::endgroup::"
 
         # first we delete the old chart folder entirely
         (set -x; rm -rf "${TARGET_PATH}")
         # copy updated chart to gitops repo
         (set -x; cp -r "${HELM_CHARTS}/${DEPLOYMENT}" "${TARGET_PATH}")
-        # remove all vars except the env one
-        (set -x; find "${TARGET_PATH}/vars" -type f ! -name "${ENVIRONMENT}.y*ml" -exec rm {} \;)
+        # remove all environment-specific values except the env one
+        (set -x; find "${TARGET_PATH}/values" -type f ! -name "${ENVIRONMENT}.y*ml" -exec rm {} \;)
         # remove extraneous files (e.g. Earthfile)
         (set -x; rm -rf "${TARGET_PATH}/Earthfile" "${TARGET_PATH}/README.md")
 
         echo "::group::${TARGET_PATH}"
         ls -la "${TARGET_PATH}"
         echo "::endgroup::"
-        echo "::group::${TARGET_PATH}/vars"
-        ls -la "${TARGET_PATH}/vars"
+        echo "::group::${TARGET_PATH}/values/"
+        ls -la "${TARGET_PATH}/values/"
         echo "::endgroup::"
 
         # generate ArgoCD Application
