@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Env.DEPLOYMENT }}
+  namespace: argocd
+  labels:
+    tags.datadoghq.com/env: {{ .Env.ENVIRONMENT }}
+    tags.datadoghq.com/service: {{ .Env.DEPLOYMENT }}
+    tags.datadoghq.com/version: {{ .Env.TAG }}
+spec:
+  destination:
+    name: in-cluster
+    namespace: {{ .Env.DESTINATION_NAMESPACE }}
+  project: default
+  source:
+    repoURL: 'https://github.com/aisrael/gitops'
+    path: charts/{{ .Env.DEPLOYMENT }}/{{ .Env.ENVIRONMENT }}
+    targetRevision: main
+    helm:
+      releaseName: {{ .Env.DEPLOYMENT }}
+      valueFiles:
+        - vars/{{ .Env.ENVIRONMENT }}.yaml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

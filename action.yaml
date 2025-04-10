@@ -1,0 +1,176 @@
+name: 'GitOps Push'
+description: 'Push changes to a GitOps repository'
+inputs:
+  gitops-repo-token:
+    description: 'The token to use for the GitOps repository'
+    required: true
+  ref:
+    description: 'The SHA, tag, or branch to push from, e.g. main or v1.0.0'
+    required: true
+  environment:
+    description: 'The environment to push to, e.g. dev'
+    type: environment
+    required: true
+  deployment:
+    description: 'The deployment to push'
+    required: true
+outputs:
+  commit-sha:
+    description: 'The SHA of the commit that was pushed'
+    value: ${{ steps.gitops-push.outputs.commit-sha }}
+runs:
+  using: composite
+  steps:
+    - name: Debug
+      shell: bash
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+      run: |
+        echo "ref: ${{ inputs.ref }}"
+        echo "environment: ${{ inputs.environment }}"
+        echo "deployment: ${{ inputs.deployment }}"
+        echo "::group::github context"
+        echo "${GITHUB_CONTEXT}"
+        echo "::endgroup::"
+        echo "github.action_path: ${{ github.action_path }}"
+        echo "::group::${{ github.action_path }}"
+        ls -la "${{ github.action_path }}"
+        echo "::endgroup::"
+    - name: Checkout branch or tag
+      if: inputs.ref != ''
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+    - name: Checkout the ref or SHA that triggered the workflow
+      if: inputs.ref == ''
+      uses: actions/checkout@v4
+    - name: Checkout gitops repo
+      uses: actions/checkout@v4
+      with:
+        repository: aisrael/gitops
+        token: ${{ inputs.gitops-repo-token }}
+        path: gitops
+    - name: Download and install gomplate
+      shell: bash
+      env:
+        GOMPLATE_VERSION: v4.3.1
+        EXPECTED_SHA256: 9f6c008a8ffa2574ce404acd31dd4efbdbde7aeaa867f0b8fd8dccd298cd282e
+      run: |
+        curl -L https://github.com/hairyhenderson/gomplate/releases/download/${GOMPLATE_VERSION}/gomplate_linux-amd64 -o "${RUNNER_TEMP}/gomplate"
+        ls -l "${RUNNER_TEMP}/gomplate"
+        (set -x; echo "${EXPECTED_SHA256} ${RUNNER_TEMP}/gomplate" | sha256sum -c)
+        chmod +x "${RUNNER_TEMP}/gomplate"
+        echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+        export PATH="${RUNNER_TEMP}:${PATH}"
+        (set -x; gomplate --version)
+    - name: GitOps Push
+      id: gitops-push
+      shell: bash
+      env:
+        REF: ${{ inputs.ref }}
+        GITHUB_SHA: ${{ github.sha }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        DEPLOYMENT: ${{ inputs.deployment }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        EVENT_ORGANIZATION: ${{ github.event.organization }}
+        EVENT_REPOSITORY: ${{ github.event.repository }}
+      run: |
+        echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+        echo "REF: ${REF}"
+        echo "GITHUB_SHA: $GITHUB_SHA"
+        echo "ENVIRONMENT: ${ENVIRONMENT}"
+        echo "DEPLOYMENT: ${DEPLOYMENT}"
+        echo "GITHUB_EVENT_NAME: ${GITHUB_EVENT_NAME}"
+        if [[ "${REF}" == v* ]]; then
+          export TAG="${REF}"
+        else
+          export TAG="${GITHUB_SHA:0:10}"
+        fi
+        echo "TAG: $TAG"
+
+        export HELM_CHARTS="${GITHUB_WORKSPACE}/helm/charts"
+        export GITOPS_REPO="${GITHUB_WORKSPACE}/gitops"
+        export CLUSTER_ENV_PATH="${GITOPS_REPO}/clusters/${ENVIRONMENT}"
+        echo "GITOPS_REPO: ${GITOPS_REPO}"
+        echo "CLUSTER_ENV_PATH: ${CLUSTER_ENV_PATH}"
+
+        pushd "${HELM_CHARTS}/${DEPLOYMENT}"
+        echo "Updating appVersion to ${{ inputs.ref }} in $(pwd)/Chart.yaml"
+        yq e -i '.appVersion=env(TAG)' Chart.yaml
+        echo "::group::${DEPLOYMENT}.yaml"
+        cat Chart.yaml
+        echo "::endgroup::"
+
+        export TARGET_PATH="${GITOPS_REPO}/charts/${DEPLOYMENT}/${ENVIRONMENT}"
+        # does the target path exist?
+        if [ -d "${TARGET_PATH}" ]; then
+          echo "Old chart found at ${TARGET_PATH}"
+        else
+          echo "::warning::No chart found at ${TARGET_PATH}!"
+        fi
+
+        echo "::group::${HELM_CHARTS}/${DEPLOYMENT}/vars/"
+        ls -la "${HELM_CHARTS}/${DEPLOYMENT}/vars/"
+        echo "::endgroup::"
+
+        # first we delete the old chart folder entirely
+        (set -x; rm -rf "${TARGET_PATH}")
+        # copy updated chart to gitops repo
+        (set -x; cp -r "${HELM_CHARTS}/${DEPLOYMENT}" "${TARGET_PATH}")
+        # remove all vars except the env one
+        (set -x; find "${TARGET_PATH}/vars" -type f ! -name "${ENVIRONMENT}.y*ml" -exec rm {} \;)
+        # remove extraneous files (e.g. Earthfile)
+        (set -x; rm -rf "${TARGET_PATH}/Earthfile" "${TARGET_PATH}/README.md")
+
+        echo "::group::${TARGET_PATH}"
+        ls -la "${TARGET_PATH}"
+        echo "::endgroup::"
+        echo "::group::${TARGET_PATH}/vars"
+        ls -la "${TARGET_PATH}/vars"
+        echo "::endgroup::"
+
+        # generate ArgoCD Application
+        export ARGOCD_APP_PATH="${CLUSTER_ENV_PATH}/${DEPLOYMENT}.yaml"
+        export TEMPLATE_PATH="${{ github.action_path }}/app.yaml.gomplate"
+        echo "TEMPLATE_PATH: ${TEMPLATE_PATH}"
+        echo "::group::${TEMPLATE_PATH}"
+        cat "${TEMPLATE_PATH}"
+        echo "::endgroup::"
+        echo "::group::gomplate \< ${TEMPLATE_PATH} \> ${ARGOCD_APP_PATH}"
+        gomplate < "${TEMPLATE_PATH}"
+        echo "::endgroup::"
+        gomplate < "${TEMPLATE_PATH}" > "${ARGOCD_APP_PATH}"
+        echo "::group::${ARGOCD_APP_PATH}"
+        cat "${ARGOCD_APP_PATH}"
+        echo "::endgroup::"
+        popd
+
+        cd "${GITOPS_REPO}"
+        (set -x; git config --global user.name "aisrael")
+        (set -x; git config --global user.email "aisrael@gmail.com")
+        (set -x; git rev-parse HEAD)
+        echo "::group::git status"
+        git status
+        echo "::endgroup::"
+        echo "::group::git diff"
+        git diff
+        echo "::endgroup::"
+        (set -x; git add -A)
+        # Set commit message
+        if [ -n "${REF}" ]; then
+          # We just fabricate the commit url
+          if [[ "${REF}" == v* ]]; then
+            export COMMIT_URL="https://github.com/${EVENT_ORGANIZATION}/${EVENT_REPOSITORY}/releases/tag/${REF}"
+          else
+            export COMMIT_URL="https://github.com/${EVENT_ORGANIZATION}/${EVENT_REPOSITORY}/tree/${REF}"
+          fi
+          export LINK="${REF} (${COMMIT_URL})"
+        else
+          export LINK="${{ github.event.head_commit.url }}"
+        fi
+        (set -x; git commit -m "Deployed ${DEPLOYMENT} ${LINK} to ${ENVIRONMENT}")
+        (set -x; git rev-parse HEAD)
+
+        # Ah, push it!
+        (set -x; git push)
+        echo "commit-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
